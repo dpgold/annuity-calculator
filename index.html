@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Survivor Annuity Calculator</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 0 20px;
+      background: #fff;
+      color: #111;
+    }
+    h1 { font-size: 20px; font-weight: 500; margin-bottom: 0.25rem; }
+    .subtitle { font-size: 14px; color: #666; margin-bottom: 2rem; }
+
+    .person-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 2rem;
+    }
+    .person-box {
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 1rem;
+    }
+    .person-box h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #3266ad;
+      margin: 0 0 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .person-box h3.sponsor-title { color: #7a5c00; }
+    .field-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 13px;
+      color: #555;
+    }
+    .field-row label { flex: 1; min-width: 0; padding-right: 8px; }
+    .field-row input[type="number"] {
+      width: 58px;
+      font-size: 13px;
+      font-weight: 500;
+      text-align: right;
+      padding: 3px 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+    .gender-toggle, .health-toggle {
+      display: flex;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .gender-toggle button, .health-toggle button {
+      flex: 1;
+      padding: 3px 8px;
+      font-size: 12px;
+      border: none;
+      background: #fff;
+      cursor: pointer;
+      color: #555;
+      transition: background 0.15s, color 0.15s;
+    }
+    .gender-toggle button.active { background: #3266ad; color: #fff; }
+    .health-toggle button.active { background: #3266ad; color: #fff; }
+    .gender-toggle.sponsor button.active { background: #7a5c00; }
+    .health-toggle.sponsor button.active { background: #7a5c00; }
+
+    .derived-row {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #f0f0f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+    .derived-label { color: #3266ad; font-weight: 500; }
+    .derived-label.sponsor { color: #7a5c00; }
+    .derived-value { font-size: 14px; font-weight: 600; color: #3266ad; }
+    .derived-value.sponsor { color: #7a5c00; }
+
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 2rem;
+    }
+    .card { background: #f5f5f3; border-radius: 8px; padding: 1rem; }
+    .card.highlight { background: #eef3fa; border: 1px solid #c0d0e8; }
+    .card-label { font-size: 13px; color: #666; margin: 0 0 4px; }
+    .card-value { font-size: 22px; font-weight: 500; margin: 0; }
+    .card.highlight .card-value { color: #3266ad; }
+
+    .control { margin-bottom: 1.5rem; }
+    .control-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .control-label { font-size: 14px; color: #555; }
+    .control-input-group { display: flex; align-items: center; gap: 6px; }
+    .control-input-group input[type="number"] {
+      font-size: 14px; font-weight: 500; text-align: right;
+      padding: 4px 6px; border: 1px solid #ccc; border-radius: 6px;
+    }
+    .wide { width: 110px; }
+    .narrow { width: 68px; }
+    .control-unit { font-size: 14px; color: #666; }
+    .control-prefix { font-size: 14px; color: #666; }
+    input[type="range"] { width: 100%; accent-color: #3266ad; }
+    .tick-labels {
+      display: flex; justify-content: space-between;
+      font-size: 11px; color: #999; margin-top: 4px;
+    }
+
+    .formula-box {
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 2rem;
+      font-size: 14px;
+    }
+    .formula-box .label { font-size: 13px; color: #666; margin: 0 0 8px; }
+    .formula-box .step { margin-bottom: 6px; }
+
+    .chart-wrap { position: relative; width: 100%; height: 300px; margin-bottom: 1rem; }
+    .chart-note { font-size: 12px; color: #999; margin: 0; }
+    .data-source { font-size: 11px; color: #bbb; margin-top: 6px; }
+
+    @media (max-width: 480px) {
+      .person-grid { grid-template-columns: 1fr; }
+    }
+    .table-toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 1.5rem;
+      padding: 0.75rem 1rem;
+      background: #f5f5f3;
+      border-radius: 8px;
+    }
+    .table-toggle-label { font-size: 14px; color: #555; flex: 1; }
+    .table-toggle-label span { font-size: 11px; color: #999; display: block; margin-top: 2px; }
+    .table-toggle {
+      display: flex;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .table-toggle button {
+      padding: 5px 14px;
+      font-size: 13px;
+      border: none;
+      background: #fff;
+      cursor: pointer;
+      color: #555;
+      transition: background 0.15s, color 0.15s;
+    }
+    .table-toggle button.active { background: #3266ad; color: #fff; }
+  </style>
+</head>
+<body>
+
+  <h1>Survivor Annuity Calculator</h1>
+  <p class="subtitle">Fair price today of a real annuity paid to the beneficiary upon the sponsor's death, for as long as the beneficiary lives (max age 110).</p>
+
+  <div class="table-toggle-wrap">
+    <div class="table-toggle-label">
+      Mortality table
+      <span id="table-desc">SSA 2022 Period Life Table — general population average</span>
+    </div>
+    <div class="table-toggle">
+      <button id="btn-ssa"          class="active" onclick="setTable('ssa')">SSA</button>
+      <button id="btn-conservative" onclick="setTable('conservative')">Conservative</button>
+    </div>
+  </div>
+
+  <div class="person-grid">
+
+    <!-- BENEFICIARY -->
+    <div class="person-box">
+      <h3>Beneficiary</h3>
+      <div class="field-row">
+        <label>Current age</label>
+        <input type="number" id="ben-age" min="18" max="109" step="1" value="60">
+      </div>
+      <div class="field-row">
+        <label>Gender</label>
+        <div class="gender-toggle">
+          <button id="ben-female" class="active" onclick="setBenGender('female')">Female</button>
+          <button id="ben-male"   onclick="setBenGender('male')">Male</button>
+        </div>
+      </div>
+      <div class="field-row" style="margin-bottom:0;">
+        <label>Health</label>
+        <div class="health-toggle">
+          <button id="ben-poor"      onclick="setBenHealth('poor')">Poor</button>
+          <button id="ben-average"   onclick="setBenHealth('average')">Average</button>
+          <button id="ben-excellent" class="active" onclick="setBenHealth('excellent')">Excellent</button>
+        </div>
+      </div>
+      <div class="derived-row">
+        <span class="derived-label">Exp. remaining life</span>
+        <span class="derived-value" id="ben-life-exp">—</span>
+      </div>
+    </div>
+
+    <!-- SPONSOR -->
+    <div class="person-box">
+      <h3 class="sponsor-title">Sponsor</h3>
+      <div class="field-row">
+        <label>Current age</label>
+        <input type="number" id="spon-age" min="18" max="109" step="1" value="60">
+      </div>
+      <div class="field-row">
+        <label>Gender</label>
+        <div class="gender-toggle sponsor">
+          <button id="spon-male"   class="active" onclick="setSponGender('male')">Male</button>
+          <button id="spon-female" onclick="setSponGender('female')">Female</button>
+        </div>
+      </div>
+      <div class="field-row" style="margin-bottom:0;">
+        <label>Health</label>
+        <div class="health-toggle sponsor">
+          <button id="spon-poor"      onclick="setSponHealth('poor')">Poor</button>
+          <button id="spon-average"   onclick="setSponHealth('average')">Average</button>
+          <button id="spon-excellent" class="active" onclick="setSponHealth('excellent')">Excellent</button>
+        </div>
+      </div>
+      <div class="derived-row">
+        <span class="derived-label sponsor">Exp. remaining life</span>
+        <span class="derived-value sponsor" id="spon-life-exp">—</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Payout -->
+  <div class="control">
+    <div class="control-header">
+      <span class="control-label">Annual payout to beneficiary (real $)</span>
+      <div class="control-input-group">
+        <span class="control-prefix">$</span>
+        <input type="number" id="payout-input" class="wide" min="1000" max="10000000" step="1000" value="100000">
+        <span class="control-unit">/yr</span>
+      </div>
+    </div>
+    <input type="range" min="10000" max="1000000" value="100000" step="10000" id="payout-slider">
+    <div class="tick-labels"><span>$10K</span><span>$250K</span><span>$500K</span><span>$1M</span></div>
+  </div>
+
+  <!-- Rate -->
+  <div class="control">
+    <div class="control-header">
+      <span class="control-label">Real discount rate</span>
+      <div class="control-input-group">
+        <input type="number" id="rate-input" class="narrow" min="0.1" max="20" step="0.1" value="2.8">
+        <span class="control-unit">%</span>
+      </div>
+    </div>
+    <input type="range" min="0.1" max="15" value="2.8" step="0.1" id="rate-slider">
+    <div class="tick-labels"><span>0.1%</span><span>5%</span><span>10%</span><span>15%</span></div>
+  </div>
+
+  <!-- Markup slider -->
+  <div class="control">
+    <div class="control-header">
+      <span class="control-label">Insurer markup</span>
+      <div class="control-input-group">
+        <input type="number" id="markup-input" class="narrow" min="0" max="100" step="1" value="20">
+        <span class="control-unit">%</span>
+      </div>
+    </div>
+    <input type="range" min="0" max="50" value="20" step="1" id="markup-slider">
+    <div class="tick-labels"><span>0%</span><span>10%</span><span>20%</span><span>30%</span><span>40%</span><span>50%</span></div>
+    <p style="font-size:11px;color:#999;margin:4px 0 0;">Typical insurer loading above actuarially fair price (profit, expenses, adverse selection). Industry range: 15–30%.</p>
+  </div>
+
+  <!-- Summary cards — 2×2 -->
+  <div class="cards">
+    <!-- Row 1: Prices -->
+    <div class="card highlight">
+      <p class="card-label">Actuarially-fair price</p>
+      <p class="card-value" id="pv-display">—</p>
+    </div>
+    <div class="card">
+      <p class="card-label">Fully-loaded price</p>
+      <p class="card-value" id="loaded-display">—</p>
+    </div>
+    <!-- Row 2: Years -->
+    <div class="card">
+      <p class="card-label">Exp. sponsor death age</p>
+      <p class="card-value" id="spon-death-age">—</p>
+    </div>
+    <div class="card">
+      <p class="card-label">Exp. years of payments</p>
+      <p class="card-value" id="exp-payment-yrs">—</p>
+    </div>
+  </div>
+
+  <div class="formula-box">
+    <p class="label">How it's calculated</p>
+    <div class="step">Step 1: &nbsp;<strong id="step1"></strong></div>
+    <div class="step">Step 2: &nbsp;<strong id="step2"></strong></div>
+    <div class="step">Step 3: &nbsp;<strong id="step3"></strong></div>
+  </div>
+
+  <div class="chart-wrap">
+    <canvas id="myChart" role="img" aria-label="Chart showing expected annual payment by beneficiary age"></canvas>
+  </div>
+  <p class="chart-note">Chart shows the expected payment at each beneficiary age — the annual payout weighted by the probability the sponsor has died AND the beneficiary is still alive.</p>
+  <p class="data-source" id="data-source-note">Survival probabilities: SSA Period Life Table 2022 (2025 Trustees Report). Health adjustments apply a mortality rate multiplier (Poor 1.5×, Average 1.0×, Excellent 0.6×).</p>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <script>
+    // ── SSA 2022 Period Life Table (lx, survivors out of 100,000) ────────────
+    const ssaMale   = [100000,99394,99345,99314,99290,99270,99253,99239,99226,99214,99202,99190,99176,99159,99136,99104,99060,98998,98916,98815,98698,98570,98431,98284,98128,97963,97789,97605,97412,97208,96992,96766,96529,96282,96026,95765,95498,95222,94937,94643,94339,94022,93693,93352,92997,92625,92238,91833,91405,90950,90468,89955,89409,88825,88196,87520,86789,86003,85159,84250,83277,82240,81138,79965,78720,77402,76017,74572,73064,71488,69838,68104,66285,64379,62376,60263,58028,55642,53125,50479,47715,44820,41816,38722,35557,32340,29089,25837,22621,19490,16504,13703,11128,8809,6776,5055,3653,2554,1726,1126,710,432,253,142,77,40,19,9,4,2,1,0,0,0,0,0,0,0,0,0,0];
+    const ssaFemale = [100000,99488,99449,99425,99405,99389,99376,99364,99353,99343,99332,99321,99309,99295,99279,99260,99238,99211,99177,99138,99094,99044,98992,98936,98875,98811,98742,98669,98590,98506,98415,98318,98214,98104,97986,97863,97733,97596,97450,97295,97129,96954,96769,96575,96371,96156,95930,95689,95429,95149,94847,94524,94180,93811,93413,92982,92513,92005,91454,90859,90217,89526,88782,87984,87132,86231,85281,84279,83223,82099,80893,79597,78206,76705,75079,73319,71414,69332,67086,64678,62112,59370,56455,53371,50112,46683,43095,39380,35566,31689,27827,24048,20414,16984,13819,10967,8465,6346,4609,3240,2205,1449,918,559,327,183,97,49,23,10,4,2,1,0,0,0,0,0,0,0];
+
+    // SOA IAM 2012 Basic Table (annuitant-based, used by insurers)
+    const iamMale   = [100000,99706,99685,99671,99660,99651,99643,99636,99629,99622,99616,99609,99601,99591,99577,99558,99533,99501,99461,99413,99357,99294,99223,99144,99057,98963,98861,98750,98631,98502,98365,98218,98062,97895,97716,97523,97314,97087,96841,96576,96291,95985,95657,95306,94930,94527,94095,93631,93133,92597,92020,91398,90729,90007,89229,88390,87487,86519,85482,84374,83192,81929,80580,79138,77596,75951,74203,72356,70411,68372,66243,64026,61726,59348,56898,54380,51802,49168,46490,43777,41043,38298,35558,32838,30154,27521,24958,22479,20098,17826,15674,13650,11759,10009,8403,6942,5625,4451,3450,2607,1924,1390,984,683,464,309,201,128,79,48,28,16,9,5,2,1,0,0,0,0];
+    const iamFemale = [100000,99779,99762,99751,99742,99735,99728,99722,99717,99712,99706,99700,99694,99686,99676,99663,99647,99627,99603,99574,99540,99502,99459,99412,99360,99304,99243,99177,99107,99031,98950,98863,98770,98670,98563,98449,98326,98194,98051,97896,97729,97549,97354,97144,96917,96672,96407,96121,95812,95477,95114,94720,94293,93830,93326,92777,92179,91526,90813,90034,89183,88253,87235,86120,84901,83573,82136,80594,78952,77215,75388,73476,71483,69412,67267,65051,62769,60424,58024,55575,53087,50568,48027,45476,42924,40380,37855,35361,32909,30509,28170,25900,23709,21603,19588,17669,15849,14130,12513,10999,9588,8279,7072,5966,4961,4054,3243,2524,1891,1373,994,699,480,321,210,134,83,50,29,16,9,4,2,1,0,0];
+
+    const healthMultiplier = { poor: 1.5, average: 1.0, excellent: 0.6 };
+    const lxCache = {};
+    let mortTable = 'ssa';
+
+    function setTable(t) {
+      mortTable = t;
+      Object.keys(lxCache).forEach(k => delete lxCache[k]);
+      document.getElementById('btn-ssa').classList.toggle('active', t === 'ssa');
+      document.getElementById('btn-conservative').classList.toggle('active', t === 'conservative');
+      document.getElementById('table-desc').textContent = t === 'ssa'
+        ? 'SSA 2022 Period Life Table — general population average'
+        : 'SOA IAM 2012 + MP-2021 improvement scale — insurer annuitant table projected to 2025';
+      document.getElementById('data-source-note').textContent = t === 'ssa'
+        ? 'Survival probabilities: SSA Period Life Table 2022 (2025 Trustees Report). Health adjustments apply a mortality rate multiplier (Poor 1.5×, Average 1.0×, Excellent 0.6×).'
+        : 'Survival probabilities: SOA IAM 2012 Basic Table (individual annuitant population) with MP-2021 mortality improvement scale applied, projected forward 13 years to 2025. This assumes longer lifespans than the general population — consistent with how insurers price annuities. Health adjustments apply a mortality rate multiplier (Poor 1.5×, Average 1.0×, Excellent 0.6×).';
+      update();
+    }
+
+    function mp2021Rate(age) {
+      if (age < 50)  return 0.010;
+      if (age < 60)  return 0.010;
+      if (age < 70)  return 0.009;
+      if (age < 80)  return 0.008;
+      if (age < 90)  return 0.006;
+      if (age < 100) return 0.004;
+      return 0.002;
+    }
+
+    const IMPROVEMENT_YEARS = 2025 - 2012; // 13 years
+
+    function buildAdjustedLx(gender, multiplier) {
+      const tbl = mortTable === 'conservative'
+        ? (gender === 'male' ? iamMale : iamFemale)
+        : (gender === 'male' ? ssaMale : ssaFemale);
+      const lx = [100000];
+      for (let i = 0; i < tbl.length - 1; i++) {
+        let qx = tbl[i] === 0 ? 1 : (1 - tbl[i+1] / tbl[i]);
+        if (mortTable === 'conservative') {
+          const imp = mp2021Rate(i);
+          qx = qx * Math.pow(1 - imp, IMPROVEMENT_YEARS);
+        }
+        qx = Math.min(1, qx * multiplier);
+        lx.push(lx[i] * (1 - qx));
+      }
+      return lx;
+    }
+
+    function getAdjustedLx(gender, health) {
+      const key = mortTable + '_' + gender + '_' + health;
+      if (!lxCache[key]) lxCache[key] = buildAdjustedLx(gender, healthMultiplier[health]);
+      return lxCache[key];
+    }
+
+    function survivalProb(gender, fromAge, toAge, health) {
+      if (toAge <= fromAge) return 1.0;
+      const lx   = getAdjustedLx(gender, health || 'average');
+      const from = Math.min(Math.floor(fromAge), lx.length - 1);
+      const to   = Math.min(Math.floor(toAge),   lx.length - 1);
+      return lx[from] === 0 ? 0 : Math.min(1, lx[to] / lx[from]);
+    }
+
+    function expectedRemainingLife(gender, currentAge, health) {
+      let e = 0;
+      for (let age = currentAge; age <= 110; age++) {
+        e += survivalProb(gender, currentAge, age, health);
+      }
+      return e;
+    }
+
+    // ── State ─────────────────────────────────────────────────────────────
+    let payout     = 100000;
+    let rate       = 2.8;
+    let markup     = 20;
+    let benGender  = 'female';
+    let sponGender = 'male';
+    let benHealth  = 'excellent';
+    let sponHealth = 'excellent';
+
+    function getBenAge()  { return parseInt(document.getElementById('ben-age').value)  || 60; }
+    function getSponAge() { return parseInt(document.getElementById('spon-age').value) || 60; }
+
+    function setBenGender(g) {
+      benGender  = g;
+      sponGender = g === 'female' ? 'male' : 'female';
+      document.getElementById('ben-female').classList.toggle('active', g === 'female');
+      document.getElementById('ben-male').classList.toggle('active', g === 'male');
+      document.getElementById('spon-male').classList.toggle('active', sponGender === 'male');
+      document.getElementById('spon-female').classList.toggle('active', sponGender === 'female');
+      update();
+    }
+    function setSponGender(g) {
+      sponGender = g;
+      benGender  = g === 'male' ? 'female' : 'male';
+      document.getElementById('spon-male').classList.toggle('active', g === 'male');
+      document.getElementById('spon-female').classList.toggle('active', g === 'female');
+      document.getElementById('ben-female').classList.toggle('active', benGender === 'female');
+      document.getElementById('ben-male').classList.toggle('active', benGender === 'male');
+      update();
+    }
+    function setBenHealth(h) {
+      benHealth = h;
+      ['poor','average','excellent'].forEach(x =>
+        document.getElementById('ben-' + x).classList.toggle('active', x === h));
+      update();
+    }
+    function setSponHealth(h) {
+      sponHealth = h;
+      ['poor','average','excellent'].forEach(x =>
+        document.getElementById('spon-' + x).classList.toggle('active', x === h));
+      update();
+    }
+
+    document.getElementById('ben-age').addEventListener('input',  update);
+    document.getElementById('spon-age').addEventListener('input', update);
+
+    function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+    function fmtPayout(n) {
+      return n >= 1000000 ? '$' + (n/1000000).toFixed(2)+'M' : '$'+Math.round(n/1000)+'K';
+    }
+
+    function computePV(benAge, sponAge, p, r) {
+      let pv = 0;
+      const rr = r / 100;
+      for (let t = 1; t <= 110 - benAge; t++) {
+        const pBenAlive = survivalProb(benGender,  benAge,  benAge  + t, benHealth);
+        const pSponDead = 1 - survivalProb(sponGender, sponAge, sponAge + t, sponHealth);
+        const discount  = Math.pow(1 + rr, t);
+        pv += (p * pSponDead * pBenAlive) / discount;
+      }
+      return pv;
+    }
+
+    function expectedPaymentByAge(benAge, sponAge) {
+      const ages = [];
+      const vals = [];
+      for (let t = 1; t <= 110 - benAge; t++) {
+        const age       = benAge + t;
+        const pBenAlive = survivalProb(benGender,  benAge,  age, benHealth);
+        const pSponDead = 1 - survivalProb(sponGender, sponAge, sponAge + t, sponHealth);
+        ages.push(age);
+        vals.push(payout * pSponDead * pBenAlive);
+      }
+      return { ages, vals };
+    }
+
+    function expectedPaymentYears(benAge, sponAge) {
+      let e = 0;
+      for (let t = 1; t <= 110 - benAge; t++) {
+        const pBenAlive = survivalProb(benGender,  benAge,  benAge  + t, benHealth);
+        const pSponDead = 1 - survivalProb(sponGender, sponAge, sponAge + t, sponHealth);
+        e += pBenAlive * pSponDead;
+      }
+      return e;
+    }
+
+    function update() {
+      const benAge  = getBenAge();
+      const sponAge = getSponAge();
+
+      const benLE  = expectedRemainingLife(benGender,  benAge,  benHealth);
+      const sponLE = expectedRemainingLife(sponGender, sponAge, sponHealth);
+      document.getElementById('ben-life-exp').textContent  = benLE.toFixed(1)  + ' yrs';
+      document.getElementById('spon-life-exp').textContent = sponLE.toFixed(1) + ' yrs';
+
+      const pv = computePV(benAge, sponAge, payout, rate);
+      document.getElementById('pv-display').textContent = fmt(pv);
+      const loadedPrice = pv * (1 + markup / 100);
+      document.getElementById('loaded-display').textContent = fmt(loadedPrice);
+
+      const expSponDeathAge = sponAge + sponLE;
+      document.getElementById('spon-death-age').textContent = 'Age ' + expSponDeathAge.toFixed(1);
+
+      const expYrs = expectedPaymentYears(benAge, sponAge);
+      document.getElementById('exp-payment-yrs').textContent = expYrs.toFixed(1) + ' yrs';
+
+      document.getElementById('step1').textContent =
+        'For each future year t: Payment = ' + fmtPayout(payout) +
+        ' × P(sponsor dead by t) × P(beneficiary alive at t)';
+      document.getElementById('step2').textContent =
+        'Each payment discounted at ' + rate.toFixed(1) + '% real per year back to today';
+      document.getElementById('step3').textContent =
+        'Sum discounted expected payments across all years from today to beneficiary age 110.';
+
+      updateChart(benAge, sponAge);
+    }
+
+    function syncControls(sliderId, inputId, setter, isFloat) {
+      const slider = document.getElementById(sliderId);
+      const input  = document.getElementById(inputId);
+      slider.addEventListener('input', () => {
+        const v = parseFloat(slider.value);
+        setter(v);
+        input.value = isFloat ? v.toFixed(1) : Math.round(v);
+        update();
+      });
+      input.addEventListener('input', () => {
+        const v = parseFloat(input.value);
+        if (!isNaN(v) && v > 0) {
+          setter(isFloat ? v : Math.round(v));
+          slider.value = Math.min(Math.max(v, parseFloat(slider.min)), parseFloat(slider.max));
+          update();
+        }
+      });
+    }
+    syncControls('payout-slider', 'payout-input', v => payout = Math.round(v), false);
+    syncControls('rate-slider',   'rate-input',   v => rate   = v,             true);
+    syncControls('markup-slider', 'markup-input', v => markup = Math.round(v), false);
+
+    // ── Chart ─────────────────────────────────────────────────────────────
+    const ctx = document.getElementById('myChart').getContext('2d');
+    const initBen  = parseInt(document.getElementById('ben-age').value)  || 60;
+    const initSpon = parseInt(document.getElementById('spon-age').value) || 60;
+    const initData = expectedPaymentByAge(initBen, initSpon);
+
+    const chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: initData.ages,
+        datasets: [
+          {
+            type: 'bar',
+            label: 'Expected annual payment',
+            data: initData.vals,
+            backgroundColor: 'rgba(50,102,173,0.75)',
+            borderRadius: 2,
+            yAxisID: 'y',
+            order: 2,
+          },
+          {
+            type: 'line',
+            label: 'Max possible payout',
+            data: initData.ages.map(() => payout),
+            borderColor: '#aaa',
+            borderWidth: 1.5,
+            borderDash: [4, 4],
+            pointRadius: 0,
+            fill: false,
+            yAxisID: 'y',
+            order: 3,
+          },
+          {
+            type: 'line',
+            label: 'Beneficiary survival',
+            data: initData.ages.map(a => survivalProb(benGender, initBen, a, benHealth) * 100),
+            borderColor: '#c0392b',
+            borderWidth: 2.5,
+            pointRadius: 0,
+            fill: false,
+            yAxisID: 'yRight',
+            order: 1,
+          },
+          {
+            type: 'line',
+            label: 'Sponsor still alive',
+            data: initData.ages.map((a, i) => survivalProb(sponGender, initSpon, initSpon + (i+1), sponHealth) * 100),
+            borderColor: '#d4a000',
+            borderWidth: 2.5,
+            borderDash: [5, 3],
+            pointRadius: 0,
+            fill: false,
+            yAxisID: 'yRight',
+            order: 1,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            labels: {
+              usePointStyle: true,
+              generateLabels: () => [
+                { text: 'Expected annual payment', fillStyle: 'rgba(50,102,173,0.75)', strokeStyle: 'rgba(50,102,173,0.75)', pointStyle: 'rect', lineWidth: 0 },
+                { text: 'Max possible payout',     fillStyle: 'transparent', strokeStyle: '#aaa', pointStyle: 'line', lineWidth: 1.5 },
+                { text: 'Beneficiary survival',    fillStyle: 'transparent', strokeStyle: '#c0392b', pointStyle: 'line', lineWidth: 2.5 },
+                { text: 'Sponsor survival',        fillStyle: 'transparent', strokeStyle: '#d4a000', pointStyle: 'line', lineWidth: 2.5 },
+              ]
+            }
+          },
+          tooltip: {
+            callbacks: {
+              title: c => 'Beneficiary age ' + c[0].label,
+              label: c => {
+                if (c.datasetIndex === 0) return 'Exp. payment: ' + fmt(c.raw);
+                if (c.datasetIndex === 1) return 'Max payout: ' + fmt(c.raw);
+                if (c.datasetIndex === 2) return 'Ben. survival: ' + c.raw.toFixed(1) + '%';
+                if (c.datasetIndex === 3) return 'Spon. survival: ' + c.raw.toFixed(1) + '%';
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            min: 0,
+            ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'k' },
+            title: { display: true, text: 'Expected annual payment ($)', font: { size: 12 } }
+          },
+          yRight: {
+            min: 0, max: 100,
+            position: 'right',
+            grid: { drawOnChartArea: false },
+            ticks: { callback: v => v + '%' },
+            title: { display: true, text: 'Likelihood of survival (%)', font: { size: 12 } }
+          },
+          x: {
+            title: { display: true, text: 'Beneficiary age', font: { size: 12 } },
+            ticks: {
+              autoSkip: false, maxRotation: 0,
+              callback: (v, i) => initData.ages[i] % 10 === 0 ? initData.ages[i] : ''
+            }
+          }
+        }
+      }
+    });
+
+    function updateChart(benAge, sponAge) {
+      const { ages, vals } = expectedPaymentByAge(benAge, sponAge);
+      chart.data.labels = ages;
+      chart.data.datasets[0].data = vals;
+      chart.data.datasets[1].data = ages.map(() => payout);
+      chart.data.datasets[2].data = ages.map(a => survivalProb(benGender, benAge, a, benHealth) * 100);
+      chart.data.datasets[3].data = ages.map((a, i) => survivalProb(sponGender, sponAge, sponAge + (i+1), sponHealth) * 100);
+      chart.options.scales.x.ticks.callback = (v, i) => ages[i] % 10 === 0 ? ages[i] : '';
+      chart.update('none');
+    }
+
+    update();
+  </script>
+</body>
+</html>
